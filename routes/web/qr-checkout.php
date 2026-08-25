@@ -1,0 +1,18 @@
+<?php
+
+use App\Http\Controllers\InventoryCheckoutQrController;
+use Illuminate\Support\Facades\Route;
+
+Route::group(['prefix' => 'qr-checkout', 'middleware' => ['auth']], function () {
+    Route::get('{type}/{id}', [InventoryCheckoutQrController::class, 'show'])
+        ->where(['type' => '[a-z]+', 'id' => '[0-9]+'])
+        ->name('qr-checkout.show');
+
+    Route::get('{type}/{id}/image', [InventoryCheckoutQrController::class, 'image'])
+        ->where(['type' => '[a-z]+', 'id' => '[0-9]+'])
+        ->name('qr-checkout.image');
+
+    Route::get('{type}/{id}/label', [InventoryCheckoutQrController::class, 'label'])
+        ->where(['type' => '[a-z]+', 'id' => '[0-9]+'])
+        ->name('qr-checkout.label');
+});
