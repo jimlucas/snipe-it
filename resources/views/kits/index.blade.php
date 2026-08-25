@@ -8,6 +8,12 @@
 @parent
 @stop
 
+@section('header_right')
+    <a href="{{ route('qr-checkout.labels.index', ['type' => 'kit']) }}" class="btn btn-primary pull-right">
+        <i class="fas fa-qrcode fa-fw" aria-hidden="true"></i> Checkout Labels
+    </a>
+@endsection
+
 {{-- Content --}}
 @section('content')
     <x-container>
