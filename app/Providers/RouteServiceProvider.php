@@ -51,6 +51,7 @@ class RouteServiceProvider extends ServiceProvider
             require base_path('routes/web/components.php');
             require base_path('routes/web/users.php');
             require base_path('routes/web/kits.php');
+            require base_path('routes/web/qr-checkout.php');
             require base_path('routes/web.php');
         });
     }
@@ -58,7 +59,7 @@ class RouteServiceProvider extends ServiceProvider
     /**
      * Define the "api" routes for the application.
      *
-     * These routes are typically stateless.
+     * These routes are stateless.
      *
      * @return void
      */
