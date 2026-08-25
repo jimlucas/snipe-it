@@ -11,7 +11,7 @@ use App\Models\PredefinedKit;
 use App\Models\Setting;
 use Com\Tecnick\Barcode\Barcode;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -59,6 +59,46 @@ class InventoryCheckoutQrController extends Controller
             'type' => $type,
             'checkoutUrl' => $this->checkoutUrl($type, $id),
             'labelUrl' => route('qr-checkout.label', ['type' => $type, 'id' => $id]),
+        ]);
+    }
+
+    public function labels(string $type): View
+    {
+        $config = $this->typeConfig($type);
+        $model = $config['model'];
+
+        $this->authorize('index', $model);
+
+        return view('qr-checkout.labels', [
+            'type' => $type,
+            'items' => $model::query()->orderBy('name')->paginate(100),
+        ]);
+    }
+
+    public function labelsPrint(Request $request, string $type): View
+    {
+        $config = $this->typeConfig($type);
+        $model = $config['model'];
+
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer'],
+        ]);
+
+        $items = $model::query()
+            ->whereIn('id', $validated['ids'])
+            ->orderBy('name')
+            ->get();
+
+        abort_if($items->isEmpty(), 404);
+
+        foreach ($items as $item) {
+            $this->authorize('view', $item);
+        }
+
+        return view('qr-checkout.labels-print', [
+            'type' => $type,
+            'items' => $items,
         ]);
     }
 
@@ -113,11 +153,16 @@ class InventoryCheckoutQrController extends Controller
         return response($barcodeObject->getPngData())->header('Content-type', 'image/png');
     }
 
-    private function findItem(string $type, int $id)
+    private function typeConfig(string $type): array
     {
         abort_unless(array_key_exists($type, self::TYPES), 404);
 
-        $model = self::TYPES[$type]['model'];
+        return self::TYPES[$type];
+    }
+
+    private function findItem(string $type, int $id)
+    {
+        $model = $this->typeConfig($type)['model'];
         $item = $model::find($id);
 
         abort_if(is_null($item), 404);
@@ -127,6 +172,6 @@ class InventoryCheckoutQrController extends Controller
 
     private function checkoutUrl(string $type, int $id): string
     {
-        return route(self::TYPES[$type]['checkout_route'], $id);
+        return route($this->typeConfig($type)['checkout_route'], $id);
     }
 }
