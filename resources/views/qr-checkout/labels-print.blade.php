@@ -15,7 +15,7 @@ html,body { margin:0; padding:0; font-family:Arial,Helvetica,sans-serif; color:#
 @media screen { body{background:#ddd}.label{background:#fff;margin:10px;border:1px solid #999}.toolbar{position:sticky;top:0;z-index:10} }
 @media print { .toolbar{display:none}.label{margin:0;border:0}.label:last-child{page-break-after:auto;break-after:auto} }
 </style></head><body>
-<div class="toolbar"><button type="button" onclick="window.print()">Print</button> {{ $labelWidth }} × {{ $labelHeight }} mm · QR {{ $qrSize }} mm · {{ $copies }} {{ Str::plural('copy', $copies) }} per item</div>
+<div class="toolbar"><button type="button" onclick="window.print()">Print</button> {{ $labelWidth }} × {{ $labelHeight }} mm · QR {{ $qrSize }} mm · {{ $copies }} {{ $copies === 1 ? 'copy' : 'copies' }} per item</div>
 @foreach ($items as $item)
 @for ($copy = 0; $copy < $copies; $copy++)
 <div class="label"><img src="{{ route('qr-checkout.image', ['type'=>$type,'id'=>$item->id]) }}" alt="QR code">
