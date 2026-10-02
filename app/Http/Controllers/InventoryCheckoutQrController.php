@@ -8,6 +8,8 @@ use App\Models\Component;
 use App\Models\Consumable;
 use App\Models\License;
 use App\Models\PredefinedKit;
+use App\Models\Setting;
+use App\View\QrCheckoutLabel;
 use Com\Tecnick\Barcode\Barcode;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -25,12 +27,6 @@ class InventoryCheckoutQrController extends Controller
         'kit' => ['model' => PredefinedKit::class, 'checkout_route' => 'kits.checkout.show'],
     ];
 
-    private const LABEL_PRESETS = [
-        'dymo_11354' => ['width' => 57.0, 'height' => 32.0, 'qr' => 25.0],
-        '225x125' => ['width' => 57.15, 'height' => 31.75, 'qr' => 25.4],
-        '250x150' => ['width' => 63.5, 'height' => 38.1, 'qr' => 27.94],
-        '300x200' => ['width' => 76.2, 'height' => 50.8, 'qr' => 34.29],
-    ];
 
     public function show(string $type, int $id): View
     {
@@ -44,57 +40,40 @@ class InventoryCheckoutQrController extends Controller
         $config = $this->typeConfig($type);
         $model = $config['model'];
         $this->authorize('index', $model);
-        return view('qr-checkout.labels', ['type' => $type, 'items' => $model::query()->orderBy('name')->paginate(100)]);
+
+        return view('qr-checkout.labels', [
+            'type' => $type,
+            'items' => $model::query()->orderBy('name')->paginate(100),
+            'settings' => Setting::getSettings(),
+        ]);
     }
 
-    public function labelsPrint(Request $request, string $type): View
+    public function labelsPrint(Request $request, string $type)
     {
         $config = $this->typeConfig($type);
         $model = $config['model'];
+        $settings = Setting::getSettings();
+
+        abort_unless($settings->label2_enable, 422, 'QR Checkout Labels require the Enhanced Label Engine.');
 
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['integer'],
-            'label_preset' => ['required', 'in:dymo_11354,225x125,250x150,300x200,custom'],
-            'units' => ['required', 'in:mm,in'],
-            'label_width' => ['required_if:label_preset,custom', 'nullable', 'numeric', 'min:15', 'max:300'],
-            'label_height' => ['required_if:label_preset,custom', 'nullable', 'numeric', 'min:15', 'max:300'],
-            'qr_size' => ['required_if:label_preset,custom', 'nullable', 'numeric', 'min:10', 'max:200'],
-            'orientation' => ['required', 'in:auto,portrait,landscape'],
             'copies' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
 
-        if ($validated['label_preset'] === 'custom') {
-            $factor = $validated['units'] === 'in' ? 25.4 : 1;
-            $labelWidth = (float) $validated['label_width'] * $factor;
-            $labelHeight = (float) $validated['label_height'] * $factor;
-            $qrSize = (float) $validated['qr_size'] * $factor;
-        } else {
-            $preset = self::LABEL_PRESETS[$validated['label_preset']];
-            $labelWidth = $preset['width'];
-            $labelHeight = $preset['height'];
-            $qrSize = $preset['qr'];
-        }
-
-        if ($validated['orientation'] === 'portrait' && $labelWidth > $labelHeight) {
-            [$labelWidth, $labelHeight] = [$labelHeight, $labelWidth];
-        } elseif ($validated['orientation'] === 'landscape' && $labelHeight > $labelWidth) {
-            [$labelWidth, $labelHeight] = [$labelHeight, $labelWidth];
-        }
-
-        $maxQr = max(10.0, min($labelWidth, $labelHeight) - 6.0);
-        $qrSize = min($qrSize, $maxQr);
-
         $items = $model::query()->whereIn('id', $validated['ids'])->orderBy('name')->get();
         abort_if($items->isEmpty(), 404);
+
         foreach ($items as $item) {
             $this->authorize('view', $item);
         }
 
-        return view('qr-checkout.labels-print', [
-            'type' => $type, 'items' => $items, 'labelWidth' => $labelWidth,
-            'labelHeight' => $labelHeight, 'qrSize' => $qrSize, 'copies' => (int) $validated['copies'],
-        ]);
+        return (new QrCheckoutLabel)
+            ->with('settings', $settings)
+            ->with('items', $items)
+            ->with('type', $type)
+            ->with('copies', (int) $validated['copies']);
     }
 
     public function label(string $type, int $id): View
