@@ -74,7 +74,6 @@ class QrCheckoutLabel implements View
                     ['label' => '', 'value' => $name, 'dataSource' => 'name'],
                     $identifier ? ['label' => '', 'value' => (string) $identifier, 'dataSource' => 'identifier'] : null,
                     ['label' => 'ID', 'value' => (string) $item->id, 'dataSource' => 'id'],
-                    ['label' => '', 'value' => 'SCAN FOR ACTIONS', 'dataSource' => 'action'],
                 ])->filter()->values();
 
                 $record->put('fields', $fields->take($template->getSupportFields()));
