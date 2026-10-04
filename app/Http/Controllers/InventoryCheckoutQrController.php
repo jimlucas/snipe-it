@@ -218,12 +218,13 @@ class InventoryCheckoutQrController extends Controller
 
             for ($i = 0; $i < $quantity; $i++) {
                 if ($type === 'accessory') {
-                    AccessoryCheckout::create([
+                    $checkout = new AccessoryCheckout([
                         'accessory_id' => $item->id,
                         'assigned_to' => $targetUser->id,
                         'assigned_type' => User::class,
-                        'created_by' => auth()->id(),
                     ]);
+                    $checkout->created_by = auth()->id();
+                    $checkout->save();
                 } else {
                     DB::table('consumables_users')->insert([
                         'consumable_id' => $item->id,
