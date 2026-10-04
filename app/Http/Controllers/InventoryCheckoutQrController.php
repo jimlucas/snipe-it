@@ -101,7 +101,7 @@ class InventoryCheckoutQrController extends Controller
         ]);
     }
 
-    public function labelsPrint(Request $request, string $type)
+    public function labelsPrint(Request $request, string $type): Response
     {
         $config = $this->typeConfig($type);
         $model = $config['model'];
@@ -122,11 +122,17 @@ class InventoryCheckoutQrController extends Controller
             $this->authorize('view', $item);
         }
 
-        return (new QrCheckoutLabel)
+        $pdf = (new QrCheckoutLabel)
             ->with('settings', $settings)
             ->with('items', $items)
             ->with('type', $type)
-            ->with('copies', (int) $validated['copies']);
+            ->with('copies', (int) $validated['copies'])
+            ->render();
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="qr-checkout-'.str_slug($type).'-labels.pdf"',
+        ]);
     }
 
     public function label(string $type, int $id): View
@@ -195,7 +201,7 @@ class InventoryCheckoutQrController extends Controller
         if (! $item->canCheckoutTo($targetUser)) {
             return back()->with('error', trans('general.error_checkout_company_mismatch', [
                 'item' => ucfirst($type).' "'.$item->name.'"',
-                'item_company' => $item->company?->name ?? trans('general.unassigned'),
+                'item_company' => $item->company->name ?? trans('general.unassigned'),
                 'target' => trans('general.user').' "'.$targetUser->username.'"',
             ]));
         }
