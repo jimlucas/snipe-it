@@ -223,7 +223,7 @@ class InventoryCheckoutQrController extends Controller
                         'assigned_to' => $targetUser->id,
                         'assigned_type' => User::class,
                     ]);
-                    $checkout->created_by = auth()->id();
+                    $checkout->setAttribute('created_by', auth()->id());
                     $checkout->save();
                 } else {
                     DB::table('consumables_users')->insert([
