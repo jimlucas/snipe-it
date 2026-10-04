@@ -12,7 +12,7 @@ class QrCheckoutTest extends TestCase
 {
     private function enableEnhancedLabels(): void
     {
-        Setting::getSettings()->update([
+        $this->settings->set([
             'label2_enable' => true,
             'label2_template' => 'Tapes\\Dymo\\LabelWriter_11354',
         ]);
@@ -28,6 +28,8 @@ class QrCheckoutTest extends TestCase
 
     public function test_checkout_label_selector_requires_authentication()
     {
+        User::factory()->create();
+
         $this->get(route('qr-checkout.labels.index', ['type' => 'accessory']))
             ->assertRedirect(route('login'));
     }
