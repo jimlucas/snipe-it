@@ -4,16 +4,11 @@ namespace App\View;
 
 use App\Models\Labels\Label as LabelModel;
 use App\Models\Labels\Sheet;
-use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Traits\Macroable;
 use TCPDF;
 
-class QrCheckoutLabel implements View
+class QrCheckoutLabel
 {
-    use Macroable { __call as macroCall; }
-
-    protected const NAME = 'qr-checkout-label';
 
     protected Collection $data;
 
@@ -22,7 +17,7 @@ class QrCheckoutLabel implements View
         $this->data = new Collection;
     }
 
-    public function render(?callable $callback = null)
+    public function render(): string
     {
         $settings = $this->data->get('settings');
         $items = $this->data->get('items');
@@ -88,7 +83,7 @@ class QrCheckoutLabel implements View
         $template->writeAll($pdf, $records);
 
         $filename = 'qr-checkout-'.str_slug($type).'-labels.pdf';
-        $pdf->Output($filename, 'I');
+        return $pdf->Output($filename, 'S');
     }
 
     public function with($key, $value = null)
@@ -98,18 +93,4 @@ class QrCheckoutLabel implements View
         return $this;
     }
 
-    public function getData()
-    {
-        return $this->data;
-    }
-
-    public function name()
-    {
-        return $this->getName();
-    }
-
-    public function getName()
-    {
-        return self::NAME;
-    }
 }
