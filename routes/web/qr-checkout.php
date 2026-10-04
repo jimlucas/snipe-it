@@ -12,6 +12,10 @@ Route::group(['prefix' => 'qr-checkout', 'middleware' => ['auth']], function () 
         ->where('type', '[a-z]+')
         ->name('qr-checkout.labels.print');
 
+    Route::post('{type}/{id}/transaction', [InventoryCheckoutQrController::class, 'transact'])
+        ->where(['type' => '[a-z]+', 'id' => '[0-9]+'])
+        ->name('qr-checkout.transaction');
+
     Route::get('{type}/{id}', [InventoryCheckoutQrController::class, 'show'])
         ->where(['type' => '[a-z]+', 'id' => '[0-9]+'])
         ->name('qr-checkout.show');
