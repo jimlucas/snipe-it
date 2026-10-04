@@ -51,6 +51,11 @@
 @yield('title0')  @parent
 @stop
 
+@section('header_right')
+    <a href="{{ route('qr-checkout.labels.index', ['type' => 'asset']) }}" class="btn btn-primary pull-right">
+        <i class="fas fa-qrcode fa-fw" aria-hidden="true"></i> Checkout Labels
+    </a>
+@endsection
 
 {{-- Page content --}}
 @section('content')
